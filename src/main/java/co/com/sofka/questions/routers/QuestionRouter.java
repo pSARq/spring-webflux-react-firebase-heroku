@@ -41,18 +41,18 @@ public class QuestionRouter {
         );
     }
 
-    @Bean
-    public RouterFunction<ServerResponse> create(CreateUseCase createUseCase) {
-        Function<QuestionDTO, Mono<ServerResponse>> executor = questionDTO ->  createUseCase.apply(questionDTO)
-                .flatMap(result -> ServerResponse.ok()
-                        .contentType(MediaType.TEXT_PLAIN)
-                        .bodyValue(result));
+        @Bean
+        public RouterFunction<ServerResponse> create(CreateUseCase createUseCase) {
+            Function<QuestionDTO, Mono<ServerResponse>> executor = questionDTO ->  createUseCase.apply(questionDTO)
+                    .flatMap(result -> ServerResponse.ok()
+                            .contentType(MediaType.TEXT_PLAIN)
+                            .bodyValue(result));
 
-        return route(
-                POST("/create").and(accept(MediaType.APPLICATION_JSON)),
-                request -> request.bodyToMono(QuestionDTO.class).flatMap(executor)
-        );
-    }
+            return route(
+                    POST("/create").and(accept(MediaType.APPLICATION_JSON)),
+                    request -> request.bodyToMono(QuestionDTO.class).flatMap(executor)
+            );
+        }
 
     @Bean
     public RouterFunction<ServerResponse> get(GetUseCase getUseCase) {
@@ -63,7 +63,10 @@ public class QuestionRouter {
                         .body(BodyInserters.fromPublisher(getUseCase.apply(
                                 request.pathVariable("id")),
                                 QuestionDTO.class
-                        ))
+                        )).onErrorResume(throwable -> ServerResponse.badRequest().body(throwable.getMessage(), String.class))
+                        //)).onErrorResume((throwable) -> ServerResponse.badRequest().build())
+
+
         );
     }
 
@@ -79,13 +82,13 @@ public class QuestionRouter {
         );
     }
 
-    @Bean
-    public RouterFunction<ServerResponse> delete(DeleteUseCase deleteUseCase) {
-        return route(
-                DELETE("/delete/{id}").and(accept(MediaType.APPLICATION_JSON)),
-                request -> ServerResponse.accepted()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(deleteUseCase.apply(request.pathVariable("id")), Void.class))
-        );
-    }
+        @Bean
+        public RouterFunction<ServerResponse> delete(DeleteUseCase deleteUseCase) {
+            return route(
+                    DELETE("/delete/{id}").and(accept(MediaType.APPLICATION_JSON)),
+                    request -> ServerResponse.accepted()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(BodyInserters.fromPublisher(deleteUseCase.apply(request.pathVariable("id")), Void.class))
+            );
+        }
 }
